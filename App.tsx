@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Icons } from './components/Icons';
 import { SliderControl } from './components/SliderControl';
@@ -44,13 +43,7 @@ const TRANSLATIONS = {
     resetConfirm: "Reset all edits?",
     confirmSegmentation: "Confirm segmentation?\nThis will merge selected smart regions and manual edits.",
     changesApplied: "Changes applied.",
-    saveSession: "Save Session",
-    loadSession: "Load Session",
-    sessionSaved: "Session saved successfully.",
-    sessionLoaded: "Session loaded.",
-    noSessionFound: "No saved session found.",
-    quotaExceeded: "Failed to save: Image is too large for local storage.",
-    sessionTitle: "Session"
+    quotaExceeded: "Failed to save: Image is too large for local storage."
   },
   zh: {
     penSize: "笔触大小",
@@ -76,13 +69,7 @@ const TRANSLATIONS = {
     resetConfirm: "重置所有编辑？",
     confirmSegmentation: "确认分割？\n这将合并选定的智能区域和手动编辑。",
     changesApplied: "更改已应用。",
-    saveSession: "保存会话",
-    loadSession: "加载会话",
-    sessionSaved: "会话保存成功。",
-    sessionLoaded: "会话已加载。",
-    noSessionFound: "未找到保存的会话。",
-    quotaExceeded: "保存失败：图片过大，无法存入本地存储。",
-    sessionTitle: "会话管理"
+    quotaExceeded: "保存失败：图片过大，无法存入本地存储。"
   }
 };
 
@@ -126,47 +113,6 @@ export default function App() {
       setHistory([INITIAL_HISTORY]);
       setHistoryIndex(0);
       setImageSrc(null);
-  };
-
-  // --- Storage Logic ---
-  
-  const saveSession = () => {
-      try {
-          const session = {
-              imageSrc,
-              history,
-              historyIndex,
-              settings,
-              canvasSize,
-              tool,
-              timestamp: Date.now()
-          };
-          localStorage.setItem('pme_session', JSON.stringify(session));
-          alert(t.sessionSaved);
-      } catch (e) {
-          alert(t.quotaExceeded);
-          console.error(e);
-      }
-  };
-
-  const loadSession = () => {
-      try {
-          const data = localStorage.getItem('pme_session');
-          if (data) {
-              const session = JSON.parse(data);
-              setImageSrc(session.imageSrc);
-              setHistory(session.history);
-              setHistoryIndex(session.historyIndex);
-              setSettings(session.settings);
-              setCanvasSize(session.canvasSize);
-              if (session.tool) setTool(session.tool);
-              alert(t.sessionLoaded);
-          } else {
-              alert(t.noSessionFound);
-          }
-      } catch (e) {
-          console.error("Failed to parse session", e);
-      }
   };
 
   // --- Actions ---
@@ -370,26 +316,6 @@ export default function App() {
                         onChange={(v) => updateSetting('feather', v)} 
                     />
                 </div>
-
-                {/* Session Management */}
-                <div className="border-t border-gray-200 pt-6">
-                    <label className="text-sm font-medium text-gray-700 mb-3 block">{t.sessionTitle}</label>
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={saveSession}
-                            disabled={!imageSrc}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 border rounded text-xs font-medium transition-colors ${!imageSrc ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'}`}
-                        >
-                            <Icons.Save className="w-3.5 h-3.5" /> {t.saveSession}
-                        </button>
-                        <button 
-                            onClick={loadSession}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                        >
-                            <Icons.Load className="w-3.5 h-3.5" /> {t.loadSession}
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <div className="mt-auto pt-8">
@@ -442,16 +368,9 @@ export default function App() {
                   icon={<Icons.Subtract className="w-5 h-5" />} 
                   label={t.hardSubtract}
               />
-               <ToolButton 
-                  active={tool === 'pan'} 
-                  onClick={() => setTool('pan')} 
-                  icon={<Icons.Pan className="w-5 h-5" />} 
-                  label={t.pan}
-              />
           </div>
 
           {/* Canvas Viewport */}
-          {/* Removed p-8 and overflow-auto to allow full-screen pan/zoom canvas */}
           <div className="flex-1 relative overflow-hidden bg-gray-200">
                <CanvasWorkspace 
                   ref={canvasRef}
@@ -459,6 +378,7 @@ export default function App() {
                   width={canvasSize.width}
                   height={canvasSize.height}
                   tool={tool}
+                  onSetTool={setTool}
                   settings={settings}
                   smartSegments={currentState.smartSegments}
                   manualPaths={currentState.manualPaths}
@@ -468,7 +388,8 @@ export default function App() {
                   texts={{
                       analyzing: t.analyzing,
                       noObjects: t.noObjects,
-                      importToStart: t.importToStart
+                      importToStart: t.importToStart,
+                      panTool: t.pan
                   }}
                />
           </div>

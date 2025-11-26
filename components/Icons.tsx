@@ -17,8 +17,6 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize,
-  Save,
-  FolderOpen,
   Hand
 } from 'lucide-react';
 
@@ -40,7 +38,5 @@ export const Icons = {
   ZoomIn,
   ZoomOut,
   Fit: Maximize,
-  Save,
-  Load: FolderOpen,
   Pan: Hand
 };

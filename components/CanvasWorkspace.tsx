@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { AppSettings, DrawingPath, Point, SmartSegment, ToolType, CanvasHandle } from '../types';
 import { Icons } from './Icons';
@@ -8,6 +7,7 @@ interface CanvasWorkspaceProps {
   width: number;
   height: number;
   tool: ToolType;
+  onSetTool: (tool: ToolType) => void;
   settings: AppSettings;
   smartSegments: SmartSegment[];
   manualPaths: DrawingPath[];
@@ -18,6 +18,7 @@ interface CanvasWorkspaceProps {
       analyzing: string;
       noObjects: string;
       importToStart: string;
+      panTool: string;
   };
 }
 
@@ -26,6 +27,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
   width,
   height,
   tool,
+  onSetTool,
   settings,
   smartSegments,
   manualPaths,
@@ -540,8 +542,18 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
             />
         </div>
 
-        {/* Zoom Controls */}
+        {/* Zoom & Pan Controls */}
         <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-white/90 backdrop-blur shadow rounded-lg p-1.5 border border-gray-200 z-10">
+            {/* Pan Tool - Now integrated here */}
+             <button 
+                className={`p-1.5 rounded transition-colors ${tool === 'pan' ? 'bg-purple-100 text-purple-700' : 'hover:bg-gray-100 text-gray-600'}`}
+                onClick={() => onSetTool(tool === 'pan' ? 'smart' : 'pan')} 
+                title={texts.panTool}
+            >
+                <Icons.Pan className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 bg-gray-300 mx-1"></div>
+
             <button className="p-1.5 hover:bg-gray-100 rounded text-gray-600" onClick={() => handleZoomBtn(-1)} title="Zoom Out">
                 <Icons.ZoomOut className="w-4 h-4" />
             </button>
