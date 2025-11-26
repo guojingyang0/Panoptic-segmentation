@@ -1,0 +1,5 @@
+{
+  "name": "Panoptic Mask Editor",
+  "description": "A professional image segmentation tool supporting smart selection, manual refinement, and mask adjustments with undo/redo capabilities.",
+  "requestFramePermissions": []
+}
