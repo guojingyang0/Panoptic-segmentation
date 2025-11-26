@@ -1,5 +1,5 @@
 
-export type ToolType = 'smart' | 'add' | 'subtract';
+export type ToolType = 'smart' | 'add' | 'subtract' | 'pan';
 
 export interface Point {
   x: number;

@@ -30,6 +30,7 @@ const TRANSLATIONS = {
     smartSelect: "Smart Select",
     hardAdd: "Hard Add",
     hardSubtract: "Hard Subtract",
+    pan: "Pan Tool",
     undo: "Undo",
     redo: "Redo",
     resetAll: "Reset All",
@@ -42,7 +43,14 @@ const TRANSLATIONS = {
     discardConfirm: "Discard all changes?",
     resetConfirm: "Reset all edits?",
     confirmSegmentation: "Confirm segmentation?\nThis will merge selected smart regions and manual edits.",
-    changesApplied: "Changes applied."
+    changesApplied: "Changes applied.",
+    saveSession: "Save Session",
+    loadSession: "Load Session",
+    sessionSaved: "Session saved successfully.",
+    sessionLoaded: "Session loaded.",
+    noSessionFound: "No saved session found.",
+    quotaExceeded: "Failed to save: Image is too large for local storage.",
+    sessionTitle: "Session"
   },
   zh: {
     penSize: "笔触大小",
@@ -54,6 +62,7 @@ const TRANSLATIONS = {
     smartSelect: "智能选择",
     hardAdd: "手动添加",
     hardSubtract: "手动擦除",
+    pan: "抓手工具",
     undo: "撤销",
     redo: "重做",
     resetAll: "重置所有",
@@ -66,7 +75,14 @@ const TRANSLATIONS = {
     discardConfirm: "放弃所有更改？",
     resetConfirm: "重置所有编辑？",
     confirmSegmentation: "确认分割？\n这将合并选定的智能区域和手动编辑。",
-    changesApplied: "更改已应用。"
+    changesApplied: "更改已应用。",
+    saveSession: "保存会话",
+    loadSession: "加载会话",
+    sessionSaved: "会话保存成功。",
+    sessionLoaded: "会话已加载。",
+    noSessionFound: "未找到保存的会话。",
+    quotaExceeded: "保存失败：图片过大，无法存入本地存储。",
+    sessionTitle: "会话管理"
   }
 };
 
@@ -112,6 +128,47 @@ export default function App() {
       setImageSrc(null);
   };
 
+  // --- Storage Logic ---
+  
+  const saveSession = () => {
+      try {
+          const session = {
+              imageSrc,
+              history,
+              historyIndex,
+              settings,
+              canvasSize,
+              tool,
+              timestamp: Date.now()
+          };
+          localStorage.setItem('pme_session', JSON.stringify(session));
+          alert(t.sessionSaved);
+      } catch (e) {
+          alert(t.quotaExceeded);
+          console.error(e);
+      }
+  };
+
+  const loadSession = () => {
+      try {
+          const data = localStorage.getItem('pme_session');
+          if (data) {
+              const session = JSON.parse(data);
+              setImageSrc(session.imageSrc);
+              setHistory(session.history);
+              setHistoryIndex(session.historyIndex);
+              setSettings(session.settings);
+              setCanvasSize(session.canvasSize);
+              if (session.tool) setTool(session.tool);
+              alert(t.sessionLoaded);
+          } else {
+              alert(t.noSessionFound);
+          }
+      } catch (e) {
+          console.error("Failed to parse session", e);
+      }
+  };
+
   // --- Actions ---
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,6 +184,8 @@ export default function App() {
               img.onload = () => {
                   const maxW = 800;
                   const maxH = 600;
+                  // For the workspace, we can actually keep full resolution or scale down.
+                  // Current logic limits it to 800x600 for performance of the mock segmenter.
                   let w = img.naturalWidth;
                   let h = img.naturalHeight;
                   const aspect = w / h;
@@ -311,6 +370,26 @@ export default function App() {
                         onChange={(v) => updateSetting('feather', v)} 
                     />
                 </div>
+
+                {/* Session Management */}
+                <div className="border-t border-gray-200 pt-6">
+                    <label className="text-sm font-medium text-gray-700 mb-3 block">{t.sessionTitle}</label>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={saveSession}
+                            disabled={!imageSrc}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 border rounded text-xs font-medium transition-colors ${!imageSrc ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border-gray-300 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'}`}
+                        >
+                            <Icons.Save className="w-3.5 h-3.5" /> {t.saveSession}
+                        </button>
+                        <button 
+                            onClick={loadSession}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 bg-white border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                        >
+                            <Icons.Load className="w-3.5 h-3.5" /> {t.loadSession}
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-auto pt-8">
@@ -321,13 +400,18 @@ export default function App() {
                     <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                 </label>
             ) : (
+                <div className="space-y-3">
+                    <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                         <img src={imageSrc} alt="Preview" className="w-full h-full object-contain" />
+                    </div>
                     <button 
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white border border-gray-300 rounded hover:bg-gray-50 text-xs font-medium text-gray-600 transition-colors uppercase tracking-wide"
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white border border-gray-300 rounded hover:bg-gray-50 text-xs font-medium text-gray-600 transition-colors uppercase tracking-wide"
                     >
                         <Icons.Upload className="w-4 h-4" /> {t.replaceImage}
                         <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </button>
+                </div>
             )}
             </div>
         </div>
@@ -358,34 +442,39 @@ export default function App() {
                   icon={<Icons.Subtract className="w-5 h-5" />} 
                   label={t.hardSubtract}
               />
+               <ToolButton 
+                  active={tool === 'pan'} 
+                  onClick={() => setTool('pan')} 
+                  icon={<Icons.Pan className="w-5 h-5" />} 
+                  label={t.pan}
+              />
           </div>
 
           {/* Canvas Viewport */}
-          <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
-              <div className="relative shadow-2xl ring-1 ring-black/5 bg-white transition-all duration-300 ease-in-out" style={{ width: canvasSize.width, height: canvasSize.height }}>
-                 <CanvasWorkspace 
-                    ref={canvasRef}
-                    imageSrc={imageSrc}
-                    width={canvasSize.width}
-                    height={canvasSize.height}
-                    tool={tool}
-                    settings={settings}
-                    smartSegments={currentState.smartSegments}
-                    manualPaths={currentState.manualPaths}
-                    onCommitPath={handleCommitManualPath}
-                    onToggleSmartSegment={handleToggleSmartSegment}
-                    isLoading={isLoading}
-                    texts={{
-                        analyzing: t.analyzing,
-                        noObjects: t.noObjects,
-                        importToStart: t.importToStart
-                    }}
-                 />
-              </div>
+          {/* Removed p-8 and overflow-auto to allow full-screen pan/zoom canvas */}
+          <div className="flex-1 relative overflow-hidden bg-gray-200">
+               <CanvasWorkspace 
+                  ref={canvasRef}
+                  imageSrc={imageSrc}
+                  width={canvasSize.width}
+                  height={canvasSize.height}
+                  tool={tool}
+                  settings={settings}
+                  smartSegments={currentState.smartSegments}
+                  manualPaths={currentState.manualPaths}
+                  onCommitPath={handleCommitManualPath}
+                  onToggleSmartSegment={handleToggleSmartSegment}
+                  isLoading={isLoading}
+                  texts={{
+                      analyzing: t.analyzing,
+                      noObjects: t.noObjects,
+                      importToStart: t.importToStart
+                  }}
+               />
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="h-16 bg-[#f3f4f6] border-t border-gray-200 px-8 flex items-center justify-between shrink-0">
+          <div className="h-16 bg-[#f3f4f6] border-t border-gray-200 px-8 flex items-center justify-between shrink-0 z-20 relative">
               {/* History Controls */}
               <div className="flex gap-4">
                   <IconButton 

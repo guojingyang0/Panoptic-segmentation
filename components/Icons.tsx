@@ -13,7 +13,13 @@ import {
   Download,
   PanelLeftClose,
   PanelLeftOpen,
-  Languages
+  Languages,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Save,
+  FolderOpen,
+  Hand
 } from 'lucide-react';
 
 export const Icons = {
@@ -30,5 +36,11 @@ export const Icons = {
   Download: Download,
   SidebarClose: PanelLeftClose,
   SidebarOpen: PanelLeftOpen,
-  Language: Languages
+  Language: Languages,
+  ZoomIn,
+  ZoomOut,
+  Fit: Maximize,
+  Save,
+  Load: FolderOpen,
+  Pan: Hand
 };
