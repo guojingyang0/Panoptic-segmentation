@@ -4,7 +4,7 @@ import { SMART_MASK_COLORS } from '../constants';
 
 /**
  * Performs accurate segmentation based on image content using a simplified 
- * K-Means clustering approach on a downsampled grid (Superpixels).
+ * K-Means clustering approach on a downsampled grid.
  */
 export const mockPanopticSegmentation = async (imageData: ImageData): Promise<SmartSegment[]> => {
   // Wait a moment to ensure UI updates (mocking async work)
@@ -201,16 +201,6 @@ function traceBoundary(labels: Int8Array, w: number, h: number, startIdx: number
     
     let boundaryPixels: number[] = [];
     
-    // Instead of complex tracing, let's just do a "Convex Hull" style scan? No, shapes are complex.
-    // Let's do a naive edge detection scan on the component and sort by angle? No, non-convex.
-    
-    // Robust Logic: "Walk the Wall"
-    // P = current pixel. Backtrack = previous pixel (outside).
-    // Look at 8 neighbors clockwise. First one that is INSIDE is next P.
-    
-    // Find a starting 'outside' reference. Since we scan Left->Right, Top->Bottom,
-    // the pixel at (startX-1, startY) is either outside bounds or not visited or different label.
-    
     // Direction vectors (x,y)
     const dirs = [
         {x:0, y:-1}, // N
@@ -273,8 +263,6 @@ function traceBoundary(labels: Int8Array, w: number, h: number, startIdx: number
             
             if (isInside) {
                 // Found next boundary pixel
-                c = {x: b.x + dirs[(nextDirIdx + 4) % 8].x, y: b.y + dirs[(nextDirIdx + 4) % 8].y}; // Previous 'outside' becomes backtracker roughly?
-                // Actually in Moore algo: Backtrack is the neighbor immediately preceding the found pixel in the scan
                 const prevDirIdx = (nextDirIdx + 7) % 8;
                 c = {x: b.x + dirs[prevDirIdx].x, y: b.y + dirs[prevDirIdx].y};
                 

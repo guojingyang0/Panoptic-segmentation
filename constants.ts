@@ -1,6 +1,6 @@
 
 export const MAX_SMART_MASKS = 50;
-export const DEFAULT_PEN_SIZE = 10; // Reduced from 20 for better precision
+export const DEFAULT_PEN_SIZE = 5; // Reduced from 10 for better precision
 export const MAX_PEN_SIZE = 100;
 export const MAX_BORDER = 20;
 export const MAX_FEATHER = 20;

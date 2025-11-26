@@ -13,6 +13,11 @@ interface CanvasWorkspaceProps {
   onCommitPath: (path: DrawingPath) => void;
   onToggleSmartSegment: (segmentId: string) => void;
   isLoading?: boolean;
+  texts: {
+      analyzing: string;
+      noObjects: string;
+      importToStart: string;
+  };
 }
 
 export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
@@ -25,7 +30,8 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
   manualPaths,
   onCommitPath,
   onToggleSmartSegment,
-  isLoading
+  isLoading,
+  texts
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -51,8 +57,6 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         if (!canvasRef.current || !imageObj) return null;
         
         // We create a temporary canvas to render the final output
-        // For this prototype, we render at the current display resolution (width/height props)
-        // A production app might want to map coordinates back to naturalWidth/naturalHeight.
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = width;
         exportCanvas.height = height;
@@ -120,17 +124,6 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
                 effectiveSize = path.brushSize + (opts.borderSize * 2);
             }
         }
-        // For the composite mask, we use solid colors (white/black) usually, 
-        // but here we use the display colors.
-        // For the EXPORT mask, we really want Alpha=1 where selected.
-        // Let's stick to the visual representation for now, assuming high opacity.
-        // To be precise: The segments usually have alpha < 1 in UI. 
-        // For the MASK, we should draw opaque.
-        
-        // Override color for mask generation? 
-        // For this function, let's assume we are drawing the "Selection Alpha".
-        // Let's assume the callers (display vs export) might need different styles.
-        // BUT, to keep it simple and consistent with the "invert" logic below:
         
         const color = isSubtract ? '#000000' : (path.tool === 'add' ? '#FFFFFF' : '#FFFFFF'); 
         drawStroke(ctx, path.points, effectiveSize, color, op);
@@ -215,12 +208,11 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
        ctx.fillStyle = '#9ca3af';
        ctx.font = '16px Inter';
        ctx.textAlign = 'center';
-       ctx.fillText("Import image to start segmentation", width/2, height/2);
+       ctx.fillText(texts.importToStart, width/2, height/2);
        return; 
     }
 
     // 3. Generate Visual Mask (Colored)
-    // Note: We duplicate logic slightly because visual mask needs Colors, but Logic mask needs White/Black
     const maskCanvas = document.createElement('canvas');
     maskCanvas.width = width;
     maskCanvas.height = height;
@@ -262,11 +254,6 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         }
 
         if (settings.invertMask) {
-            // Invert visualization: Dim the background, show mask as clear?
-            // Or show the inverted mask as overlay?
-            // "Invert Mask" usually means the user selected the background.
-            // So we should highlight the background (the new mask).
-            
             const tempCtx = document.createElement('canvas').getContext('2d');
             if (tempCtx) {
                 tempCtx.canvas.width = width;
@@ -338,10 +325,10 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         ctx.fillStyle = 'white';
         ctx.font = '16px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText("Analyzing image objects...", width/2, height/2);
+        ctx.fillText(texts.analyzing, width/2, height/2);
     }
 
-  }, [imageObj, smartSegments, manualPaths, isDrawing, currentPoints, cursorPos, settings, tool, isLoading, width, height]);
+  }, [imageObj, smartSegments, manualPaths, isDrawing, currentPoints, cursorPos, settings, tool, isLoading, width, height, texts]);
 
   // Interaction
   const getPos = (e: React.MouseEvent) => {
@@ -417,7 +404,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         />
         {imageObj && !isLoading && smartSegments.length === 0 && manualPaths.length === 0 && (
              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
-                No objects found.
+                {texts.noObjects}
              </div>
         )}
     </div>

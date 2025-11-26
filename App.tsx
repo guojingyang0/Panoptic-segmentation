@@ -19,6 +19,57 @@ const INITIAL_HISTORY: EditorHistoryState = {
     manualPaths: []
 };
 
+const TRANSLATIONS = {
+  en: {
+    penSize: "Pen Size",
+    invertMask: "Invert Mask",
+    borderSize: "Border Size",
+    feather: "Feather",
+    importImage: "Import Image",
+    replaceImage: "Replace Image",
+    smartSelect: "Smart Select",
+    hardAdd: "Hard Add",
+    hardSubtract: "Hard Subtract",
+    undo: "Undo",
+    redo: "Redo",
+    resetAll: "Reset All",
+    cancel: "Cancel",
+    confirmMerge: "Confirm & Merge",
+    exportResult: "Export Result",
+    analyzing: "Analyzing image objects...",
+    noObjects: "No objects found.",
+    importToStart: "Import image to start segmentation",
+    discardConfirm: "Discard all changes?",
+    resetConfirm: "Reset all edits?",
+    confirmSegmentation: "Confirm segmentation?\nThis will merge selected smart regions and manual edits.",
+    changesApplied: "Changes applied."
+  },
+  zh: {
+    penSize: "笔触大小",
+    invertMask: "反转遮罩",
+    borderSize: "边缘扩展",
+    feather: "边缘羽化",
+    importImage: "导入图片",
+    replaceImage: "替换图片",
+    smartSelect: "智能选择",
+    hardAdd: "手动添加",
+    hardSubtract: "手动擦除",
+    undo: "撤销",
+    redo: "重做",
+    resetAll: "重置所有",
+    cancel: "取消",
+    confirmMerge: "确认并合并",
+    exportResult: "导出结果",
+    analyzing: "正在分析图像对象...",
+    noObjects: "未发现对象。",
+    importToStart: "导入图片以开始分割",
+    discardConfirm: "放弃所有更改？",
+    resetConfirm: "重置所有编辑？",
+    confirmSegmentation: "确认分割？\n这将合并选定的智能区域和手动编辑。",
+    changesApplied: "更改已应用。"
+  }
+};
+
 export default function App() {
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
   const [tool, setTool] = useState<ToolType>('smart');
@@ -30,8 +81,13 @@ export default function App() {
   const [canvasSize, setCanvasSize] = useState<{width: number, height: number}>({width: 800, height: 500});
   const [isLoading, setIsLoading] = useState(false);
 
+  // New State for UI features
+  const [lang, setLang] = useState<'en' | 'zh'>('zh');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const canvasRef = useRef<CanvasHandle>(null);
   const currentState = history[historyIndex];
+  const t = TRANSLATIONS[lang];
 
   // --- History Logic ---
 
@@ -157,8 +213,8 @@ export default function App() {
 
   const handleConfirm = () => {
       if (!imageSrc) return;
-      if (window.confirm("Confirm segmentation?\nThis will merge selected smart regions and manual edits.")) {
-           alert("Changes applied.");
+      if (window.confirm(t.confirmSegmentation)) {
+           alert(t.changesApplied);
       }
   };
 
@@ -181,72 +237,99 @@ export default function App() {
   const activeSmartMasks = currentState.smartSegments.filter(s => s.selected).length;
 
   return (
-    <div className="flex h-screen w-full bg-[#f3f4f6] text-gray-800 select-none overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-[#f3f4f6] text-gray-800 select-none overflow-hidden font-sans relative">
       
+      {/* Floating Toggle Button (Visible when Sidebar is closed) */}
+      {!isSidebarOpen && (
+          <button 
+             onClick={() => setIsSidebarOpen(true)}
+             className="absolute top-4 left-4 z-50 p-2 bg-white border border-gray-300 rounded shadow-md hover:bg-gray-100 transition-colors"
+             title="Open Sidebar"
+          >
+              <Icons.SidebarOpen className="w-5 h-5 text-gray-600" />
+          </button>
+      )}
+
       {/* Left Sidebar */}
-      <div className="w-80 flex-shrink-0 bg-[#f3f4f6] p-6 flex flex-col border-r border-gray-200 overflow-y-auto">
-        <div className="mb-8 flex justify-between items-center text-xs text-gray-500 font-mono">
-            <span>20:27</span>
-            <div className="flex gap-1">
-                <span>•••</span>
-            </div>
-        </div>
-
-        <div className="space-y-6">
-            <SliderControl 
-                label="Pen Size" 
-                value={settings.penSize} 
-                min={1} 
-                max={100} 
-                onChange={(v) => updateSetting('penSize', v)} 
-            />
-
-            <div className="flex items-center gap-2 pl-1">
-                <input 
-                    type="checkbox" 
-                    id="invert"
-                    checked={settings.invertMask}
-                    onChange={(e) => updateSetting('invertMask', e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                />
-                <label htmlFor="invert" className="text-sm font-medium text-gray-700 cursor-pointer">Invert Mask</label>
-            </div>
-
-            <div className="border-t border-gray-200 pt-6">
-                <SliderControl 
-                    label="Border Size" 
-                    value={settings.borderSize} 
-                    min={0} 
-                    max={20} 
-                    onChange={(v) => updateSetting('borderSize', v)} 
-                />
-                
-                <SliderControl 
-                    label="Feather" 
-                    value={settings.feather} 
-                    min={0} 
-                    max={20} 
-                    onChange={(v) => updateSetting('feather', v)} 
-                />
-            </div>
-        </div>
-
-        <div className="mt-auto pt-8">
-           {!imageSrc ? (
-               <label className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-white hover:border-blue-400 transition-all group">
-                   <Icons.Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
-                   <span className="text-xs font-semibold text-gray-500 group-hover:text-blue-600 uppercase tracking-wide">Import Image</span>
-                   <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-               </label>
-           ) : (
+      <div className={`${isSidebarOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full'} flex-shrink-0 bg-[#f3f4f6] flex flex-col border-r border-gray-200 transition-all duration-300 ease-in-out relative`}>
+        {/* Inner Container to prevent layout shift during transition */}
+        <div className="w-80 h-full flex flex-col p-6 overflow-y-auto">
+            
+            {/* Header: Language & Close */}
+            <div className="mb-6 flex justify-between items-center">
                 <button 
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white border border-gray-300 rounded hover:bg-gray-50 text-xs font-medium text-gray-600 transition-colors uppercase tracking-wide"
+                  onClick={() => setLang(l => l === 'en' ? 'zh' : 'en')}
+                  className="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium text-gray-600 hover:text-blue-600 hover:border-blue-400 transition-colors"
                 >
-                    <Icons.Upload className="w-4 h-4" /> Replace Image
-                    <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    <Icons.Language className="w-3.5 h-3.5" />
+                    {lang === 'en' ? 'English' : '中文'}
                 </button>
-           )}
+
+                <button 
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-1.5 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                    title="Close Sidebar"
+                >
+                    <Icons.SidebarClose className="w-5 h-5" />
+                </button>
+            </div>
+
+            <div className="space-y-6">
+                <SliderControl 
+                    label={t.penSize}
+                    value={settings.penSize} 
+                    min={1} 
+                    max={100} 
+                    onChange={(v) => updateSetting('penSize', v)} 
+                />
+
+                <div className="flex items-center gap-2 pl-1">
+                    <input 
+                        type="checkbox" 
+                        id="invert"
+                        checked={settings.invertMask}
+                        onChange={(e) => updateSetting('invertMask', e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <label htmlFor="invert" className="text-sm font-medium text-gray-700 cursor-pointer">{t.invertMask}</label>
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                    <SliderControl 
+                        label={t.borderSize}
+                        value={settings.borderSize} 
+                        min={0} 
+                        max={20} 
+                        onChange={(v) => updateSetting('borderSize', v)} 
+                    />
+                    
+                    <SliderControl 
+                        label={t.feather}
+                        value={settings.feather} 
+                        min={0} 
+                        max={20} 
+                        onChange={(v) => updateSetting('feather', v)} 
+                    />
+                </div>
+            </div>
+
+            <div className="mt-auto pt-8">
+            {!imageSrc ? (
+                <label className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-white hover:border-blue-400 transition-all group">
+                    <Icons.Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors" />
+                    <span className="text-xs font-semibold text-gray-500 group-hover:text-blue-600 uppercase tracking-wide">{t.importImage}</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                </label>
+            ) : (
+                    <button 
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white border border-gray-300 rounded hover:bg-gray-50 text-xs font-medium text-gray-600 transition-colors uppercase tracking-wide"
+                    >
+                        <Icons.Upload className="w-4 h-4" /> {t.replaceImage}
+                        <input id="file-upload" type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </button>
+            )}
+            </div>
         </div>
       </div>
 
@@ -259,7 +342,7 @@ export default function App() {
                   active={tool === 'smart'} 
                   onClick={() => setTool('smart')} 
                   icon={<Icons.Smart className="w-5 h-5" />} 
-                  label="Smart Select"
+                  label={t.smartSelect}
                   badge={activeSmartMasks > 0 ? activeSmartMasks : undefined}
               />
               <div className="w-px bg-gray-300 mx-1 my-1"></div>
@@ -267,13 +350,13 @@ export default function App() {
                   active={tool === 'add'} 
                   onClick={() => setTool('add')} 
                   icon={<Icons.Add className="w-5 h-5" />} 
-                  label="Hard Add"
+                  label={t.hardAdd}
               />
               <ToolButton 
                   active={tool === 'subtract'} 
                   onClick={() => setTool('subtract')} 
                   icon={<Icons.Subtract className="w-5 h-5" />} 
-                  label="Hard Subtract"
+                  label={t.hardSubtract}
               />
           </div>
 
@@ -292,18 +375,12 @@ export default function App() {
                     onCommitPath={handleCommitManualPath}
                     onToggleSmartSegment={handleToggleSmartSegment}
                     isLoading={isLoading}
+                    texts={{
+                        analyzing: t.analyzing,
+                        noObjects: t.noObjects,
+                        importToStart: t.importToStart
+                    }}
                  />
-                 
-                 {imageSrc && (
-                     <>
-                        <div className="absolute top-4 left-4 text-white/90 font-bold text-[10px] tracking-widest pointer-events-none drop-shadow-md select-none opacity-80">
-                            LUANMA <span className="text-red-500 bg-white/20 rounded-full px-1">EA</span> TV
-                        </div>
-                        <div className="absolute top-4 right-4 text-white/90 font-bold text-lg drop-shadow-md select-none opacity-80">
-                            酷燃
-                        </div>
-                     </>
-                 )}
               </div>
           </div>
 
@@ -315,21 +392,21 @@ export default function App() {
                       onClick={handleUndo} 
                       disabled={historyIndex === 0} 
                       icon={<Icons.Undo className="w-5 h-5" />} 
-                      label="Undo" 
+                      label={t.undo}
                   />
                   <IconButton 
                       onClick={handleRedo} 
                       disabled={historyIndex === history.length - 1} 
                       icon={<Icons.Redo className="w-5 h-5" />} 
-                      label="Redo" 
+                      label={t.redo}
                   />
                   <div className="w-px bg-gray-300 h-6 my-auto mx-2"></div>
                   <IconButton 
                       onClick={() => {
-                        if (confirm("Reset all edits?")) handleReset();
+                        if (confirm(t.resetConfirm)) handleReset();
                       }} 
                       icon={<Icons.Reset className="w-5 h-5" />} 
-                      label="Reset All" 
+                      label={t.resetAll}
                   />
               </div>
 
@@ -341,7 +418,7 @@ export default function App() {
                         onClick={handleExport}
                       >
                           <Icons.Download className="w-4 h-4" />
-                          <span>Export Result</span>
+                          <span>{t.exportResult}</span>
                       </button>
                   )}
                   
@@ -350,16 +427,16 @@ export default function App() {
                   <button 
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 rounded shadow-sm hover:bg-red-50 active:bg-red-100 transition-colors group"
                     onClick={() => {
-                        if (confirm("Discard all changes?")) handleReset();
+                        if (confirm(t.discardConfirm)) handleReset();
                     }}
-                    title="Cancel"
+                    title={t.cancel}
                   >
                       <Icons.Cancel className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
                   </button>
                   <button 
                     className="w-10 h-10 flex items-center justify-center bg-white border border-gray-300 rounded shadow-sm hover:bg-green-50 active:bg-green-100 transition-colors group"
                     onClick={handleConfirm}
-                    title="Confirm & Merge"
+                    title={t.confirmMerge}
                   >
                       <Icons.Confirm className="w-5 h-5 text-gray-400 group-hover:text-green-600" />
                   </button>

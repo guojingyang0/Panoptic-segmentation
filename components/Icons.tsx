@@ -10,7 +10,10 @@ import {
   X,
   ImagePlus,
   Settings2,
-  Download
+  Download,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Languages
 } from 'lucide-react';
 
 export const Icons = {
@@ -24,5 +27,8 @@ export const Icons = {
   Cancel: X,
   Upload: ImagePlus,
   Settings: Settings2,
-  Download: Download
+  Download: Download,
+  SidebarClose: PanelLeftClose,
+  SidebarOpen: PanelLeftOpen,
+  Language: Languages
 };
