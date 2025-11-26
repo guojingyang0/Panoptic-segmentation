@@ -65,8 +65,8 @@ export default function App() {
           reader.onload = (evt) => {
               const src = evt.target?.result as string;
               
-              // Load image to determine aspect ratio
               const img = new Image();
+              img.crossOrigin = "anonymous";
               img.src = src;
               img.onload = () => {
                   const maxW = 800;
@@ -84,23 +84,36 @@ export default function App() {
                       w = h * aspect;
                   }
                   
-                  setCanvasSize({ width: Math.floor(w), height: Math.floor(h) });
+                  const finalW = Math.floor(w);
+                  const finalH = Math.floor(h);
+
+                  setCanvasSize({ width: finalW, height: finalH });
                   setImageSrc(src);
-                  startSegmentation(src, Math.floor(w), Math.floor(h));
+
+                  // Extract ImageData for the segmentation service
+                  const tempCanvas = document.createElement('canvas');
+                  tempCanvas.width = finalW;
+                  tempCanvas.height = finalH;
+                  const ctx = tempCanvas.getContext('2d');
+                  if (ctx) {
+                      ctx.drawImage(img, 0, 0, finalW, finalH);
+                      const imageData = ctx.getImageData(0, 0, finalW, finalH);
+                      startSegmentation(imageData);
+                  }
               };
           };
           reader.readAsDataURL(file);
       }
   };
 
-  const startSegmentation = async (src: string, w: number, h: number) => {
+  const startSegmentation = async (imageData: ImageData) => {
       setHistory([INITIAL_HISTORY]);
       setHistoryIndex(0);
       setIsLoading(true);
 
       try {
-          // Trigger Auto-Segmentation with canvas dims to generate appropriate mock data
-          const segments = await mockPanopticSegmentation(w, h);
+          // Pass real pixel data to the service
+          const segments = await mockPanopticSegmentation(imageData);
           
           const newState = {
               smartSegments: segments,
