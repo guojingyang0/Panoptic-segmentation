@@ -49,6 +49,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
   const [cursorPos, setCursorPos] = useState<Point | null>(null);
+  const [hoveredSegmentId, setHoveredSegmentId] = useState<string | null>(null);
   const [imageObj, setImageObj] = useState<HTMLImageElement | null>(null);
 
   // Load image
@@ -296,14 +297,18 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         ctx.restore();
     }
 
-    if (!settings.invertMask) {
-        smartSegments.forEach(seg => {
-             const solidColor = seg.color.replace(/[\d.]+\)$/, '1)'); 
-             const lineWidth = seg.selected ? 3 : 1;
-             const strokeStyle = seg.selected ? solidColor : 'rgba(255, 255, 255, 0.7)';
-             drawPolygon(ctx, seg.path.points, false, strokeStyle, lineWidth, 'source-over');
-        });
+    // Draw Hover Preview (Subtle hint for unselected objects)
+    // REMOVED STROKE: Only showing fill for cleaner look
+    if (tool === 'smart' && hoveredSegmentId) {
+        const hoveredSeg = smartSegments.find(s => s.id === hoveredSegmentId);
+        if (hoveredSeg && !hoveredSeg.selected) {
+            const previewColor = hoveredSeg.color.replace(/[\d.]+\)$/, '0.4)');
+            drawPolygon(ctx, hoveredSeg.path.points, true, previewColor, 0, 'source-over');
+        }
     }
+
+    // REMOVED: The block that drew persistent outlines for all segments (whether selected or unselected).
+    // Now only the mask (filled region) is visible for selected items.
 
     if (isDrawing && currentPoints.length > 0 && tool !== 'smart') {
          const isSubtract = tool === 'subtract';
@@ -314,6 +319,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
     if (cursorPos && !isDrawing) {
         const r = settings.penSize / 2;
         if (tool === 'smart') {
+             // Simple cursor for smart tool
              ctx.beginPath();
              ctx.arc(cursorPos.x, cursorPos.y, 5, 0, Math.PI * 2);
              ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -369,7 +375,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         ctx.textAlign = 'center';
         ctx.fillText(texts.analyzing, cx, cy + 50);
     }
-  }, [imageObj, smartSegments, manualPaths, isDrawing, currentPoints, cursorPos, settings, tool, isLoading, width, height, texts, transform.scale, isPanning]);
+  }, [imageObj, smartSegments, manualPaths, isDrawing, currentPoints, cursorPos, settings, tool, isLoading, width, height, texts, transform.scale, isPanning, hoveredSegmentId]);
 
   // Effect for Static Updates
   useEffect(() => {
@@ -490,6 +496,34 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
 
       const pos = getPos(e.clientX, e.clientY);
       setCursorPos(pos);
+      
+      // Hit testing for hover effect
+      if (tool === 'smart') {
+          const canvas = canvasRef.current;
+          const ctx = canvas?.getContext('2d');
+          if (ctx) {
+             let foundId: string | null = null;
+             // Check top-most segments first
+             for (let i = smartSegments.length - 1; i >= 0; i--) {
+                 const seg = smartSegments[i];
+                 const path = new Path2D();
+                 if (seg.path.points.length > 0) {
+                    path.moveTo(seg.path.points[0].x, seg.path.points[0].y);
+                    for(let j=1; j<seg.path.points.length; j++) path.lineTo(seg.path.points[j].x, seg.path.points[j].y);
+                    path.closePath();
+                    
+                    if (ctx.isPointInPath(path, pos.x, pos.y)) {
+                        foundId = seg.id;
+                        break;
+                    }
+                 }
+             }
+             setHoveredSegmentId(foundId);
+          }
+      } else {
+          setHoveredSegmentId(null);
+      }
+
       if (isDrawing && tool !== 'smart') {
           setCurrentPoints(prev => [...prev, pos]);
       }
@@ -522,7 +556,7 @@ export const CanvasWorkspace = forwardRef<CanvasHandle, CanvasWorkspaceProps>(({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => { setIsDrawing(false); setCursorPos(null); setIsPanning(false); }}
+        onMouseLeave={() => { setIsDrawing(false); setCursorPos(null); setIsPanning(false); setHoveredSegmentId(null); }}
     >
         {/* Canvas Container with Transform */}
         <div 
