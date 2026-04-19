@@ -7,7 +7,8 @@
 This contains everything you need to run your app locally.
 
 在 AI Studio 中查看：https://ai.studio/apps/drive/1FZ-NMHgsf-t5_TdY7974HF3POubxeuT2
-View in AI Vercel: https://panoptic-segmentation.vercel.app/
+
+在 Vercel 中查看: https://panoptic-segmentation.vercel.app/
 
 ## Run Locally
 
