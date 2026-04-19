@@ -1,22 +1,139 @@
 <div align="center">
-<img width="1000" height="475" alt="GHBanner" src="./assets/readme-banner.png" />
+  <img width="1200" height="475" alt="Panoptic Segmentation Banner" src="./assets/readme-banner.png" />
 </div>
 
-# Run and deploy your AI Studio app
+**AI Studio原始版本:** https://ai.studio/apps/drive/1FZ-NMHgsf-t5_TdY7974HF3POubxeuT2
 
-This contains everything you need to run your app locally.
+**线上Demo：** https://panoptic-segmentation.vercel.app/
 
-在 AI Studio 中查看：https://ai.studio/apps/drive/1FZ-NMHgsf-t5_TdY7974HF3POubxeuT2
+# Panoptic Mask Editor
 
-在 Vercel 中查看: https://panoptic-segmentation.vercel.app/
+一个面向图像分割场景的交互式蒙版编辑原型。它把“智能区域选择”和“人工精修”放进同一条工作流里，让用户可以先快速拿到候选分割区域，再用画笔补边、擦除、羽化、反转，最后导出可直接用于抠图、局部编辑或后续生成式处理的 PNG 结果。
 
-## Run Locally
+## 产品定位
 
-**Prerequisites:**  Node.js
+这个项目解决的不是“训练一个分割模型”，而是“让用户更快得到可用的最终蒙版”。
 
+在真实业务里，纯自动分割通常不够稳定，纯手工抠图又太慢。这个原型把两者结合起来：
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- 先用智能分区给出一批可点击的候选区域
+- 再通过手动添加 / 擦除完成细节修正
+- 最后对蒙版做边缘扩展、羽化、反转等处理
+- 直接导出结果，进入下游流程
+
+它适合被理解为一个独立的蒙版编辑器，也适合作为更大图像工作台里的一个子模块。
+
+## 面向的用户
+
+- 内容设计和电商修图场景：快速圈定主体、商品、人物或局部区域
+- AIGC 工作流：为局部重绘、背景替换、对象编辑准备可控遮罩
+- 标注和数据预处理场景：在自动结果基础上做人工确认与修正
+- 内部工具团队：验证“智能分割 + 交互编辑”这条链路的产品体验
+
+## 核心体验流程
+
+1. 导入一张图片
+2. 系统对图片做一次智能区域分析，生成多个候选分割区域
+3. 用户点击区域完成智能选择
+4. 用户用画笔做手工添加或擦除，修边补洞
+5. 用户按需要调整笔刷大小、边缘扩展、羽化和遮罩反转
+6. 用户撤销 / 重做 / 重置，直到结果满足预期
+7. 导出带透明背景的 PNG 结果
+
+## 当前版本能力
+
+### 1. 智能选择
+
+- 导入图片后自动执行一次分区分析
+- 生成多个可点击的候选区域
+- 支持多区域叠加选择
+- 已选区域会直接形成当前有效蒙版
+
+### 2. 手工修边
+
+- 支持手动添加区域
+- 支持手动擦除区域
+- 支持调节笔触大小
+- 适合处理边缘、孔洞、小目标、误选区域
+
+### 3. 蒙版后处理
+
+- 支持反转遮罩
+- 支持边缘扩展
+- 支持边缘羽化
+- 支持导出结果 PNG
+
+### 4. 编辑效率
+
+- 支持撤销 / 重做
+- 支持重置当前编辑
+- 支持画布缩放、平移、适配屏幕
+- 支持中英文切换
+- 支持替换图片继续工作
+
+## 当前技术实现
+
+这是一个纯前端原型项目，核心实现包括：
+
+- React 19 + TypeScript
+- Vite 构建
+- Canvas 画布交互
+- 本地图片导入与前端导出
+- 基于颜色聚类和连通区域提取的 mock segmentation 服务
+
+当前“智能分割”并不依赖真实的 panoptic segmentation 模型，而是使用前端 mock 服务模拟候选区域生成，用来验证交互和工作流。
+
+## 当前边界与限制
+
+这个版本仅作为产品验证和交互演示，非生产级交付。已知边界包括：
+
+- 智能分割是 mock 实现，不代表真实模型效果
+- 没有接入后端服务、鉴权、任务队列或云端存储
+- “确认并合并”当前主要是交互占位，不会触发真正的持久化流程
+- 没有实例分割类别语义、项目管理、多文件批处理等能力
+- 导出目标目前是本地 PNG，不包含团队协作与版本管理
+
+## 工程化Todo List
+
+- 接入真实 panoptic / instance segmentation 模型
+- 增加对象标签、类别筛选和区域搜索
+- 支持多图批量处理与任务管理
+- 增加蒙版版本对比、审阅和协作能力
+- 与局部重绘、背景替换、抠图流水线打通
+- 接入云端存储与项目级资产管理
+
+## 本地运行
+
+### 环境要求
+
+- Node.js
+
+### 启动方式
+
+```bash
+npm install
+npm run dev
+```
+
+### 构建生产包
+
+```bash
+npm run build
+```
+
+## 仓库结构
+
+```text
+Panoptic-segmentation/
+├── App.tsx                             # 应用入口与整体状态管理
+├── components/
+│   ├── CanvasWorkspace.tsx            # 画布交互、缩放平移、导出
+│   ├── SliderControl.tsx              # 通用滑杆控件
+│   └── Icons.tsx                      # 图标组件
+├── services/
+│   └── mockSegmentationService.ts     # mock 智能分割逻辑
+├── types.ts                           # 类型定义
+├── constants.ts                       # 常量配置
+└── assets/
+    └── readme-banner.png              # README 展示图
+```
